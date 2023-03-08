@@ -10,13 +10,15 @@ import urllib, json
 from urllib import request, error
 
 
+class Error403(Exception):
+    pass
+
+
 class Error404(Exception):
     pass
 
 
 class Error503(Exception):
-    print('Unavailable server. The server is not ready to handle '
-          'your request.')
     pass
 
 
@@ -79,11 +81,13 @@ def _download_url(url_to_download: str) -> dict:
     except urllib.error.HTTPError as He:
         print('Failed to download contents of URL')
         print('Status code: {}'.format(He.code))
-        if He.code == 404:
-            raise Error404('The page you are looking for does not exist.', He)
+        if He.code == 403:
+            raise Error403('Invalid Access Key', He)
+        elif He.code == 404:
+            raise Error404('The page you are looking for does not exist', He)
         elif He.code == 503:
-            print('hi')
-            Error503(He)
+            raise Error503('Unavailable server. The server is not ready to '
+                           'handle your request', He)
 
     except urllib.error.URLError as Ue:
         print('Failed to download contents of URL')
