@@ -41,15 +41,27 @@ class LastFM:
         class data attributes.
         """
 
-        url = f"/2.0/?method=tag.gettoptracks&tag=disco&api_key={self.api_key}&format=json&limit=1"
+        url = f"http://ws.audioscrobbler.com/2.0/?method=geo.gettopartists" \
+              f"&country={self.ccode}&ap" \
+              f"i_key={self.api_key}&format=json&limit=5"
 
         lastfm_obj = _download_url(url)
         if lastfm_obj is not None:
             try:
-                self.top_artist = lastfm_obj['topartists'][0]['name']
+                self.top_artist = lastfm_obj['topartists']['artist'][0]['name']
             except (IndexError, KeyError):
                 print('KeyError: Invalid data format')
 
+    def transclude(self, message: str) -> str:
+        """
+        Replaces keywords in a message with associated API data.
+        :param message: The message to transclude
+
+        :returns: The transcluded message
+        """
+        if "@weather" in message:
+            t_message = message.replace('@weather', self.top_artist)
+            return t_message
 
 def _download_url(url_to_download: str) -> dict:
     response = None
@@ -92,14 +104,12 @@ def _download_url(url_to_download: str) -> dict:
 def main() -> None:
     apikey = "4b4aed6a43a67671b28e3af38ba07edc"
     ccode = 'united+states'
-    url = f"http://ws.audioscrobbler.com/2.0/?method=geo.gettopartists&country={ccode}&api_key={apikey}&format=json&limit=5"
 
-    weather_obj = _download_url(url)
-    if weather_obj is not None:
-        print(weather_obj)
-        print(weather_obj.top_artist)
+    last_fm = LastFM(ccode)
+    last_fm.set_apikey(apikey)
+    last_fm.load_data()
 
-
+    print(f'\\\\*{last_fm.top_artist}*//')
 
 
 if __name__ == '__main__':
