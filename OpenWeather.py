@@ -26,7 +26,7 @@ class OpenWeather:
     def __init__(self, zipcode, ccode):
         self.zipcode = zipcode
         self.ccode = ccode
-        self.api_key = None
+        self.api_key = "857a6b008fb4dc3d4496517d7514a4b0"
         self.temperature = None
         self.high_temperature = None
         self.low_temperature = None
@@ -52,7 +52,6 @@ class OpenWeather:
 
         url = f"http://api.openweathermap.org/data/2.5/weather?zip=" \
               f"{self.zipcode},{self.ccode}&appid={self.api_key}"
-
         weather_obj = _download_url(url)
         if weather_obj is not None:
             try:
@@ -67,6 +66,17 @@ class OpenWeather:
                 self.sunset = weather_obj['sys']['sunset']
             except (IndexError, KeyError):
                 print('KeyError: Invalid data format')
+
+    def transclude(self, message: str) -> str:
+        """
+        Replaces keywords in a message with associated API data.
+        :param message: The message to transclude
+
+        :returns: The transcluded message
+        """
+        if "@weather" in message:
+            t_message = message.replace('@weather', self.description)
+            return t_message
 
 
 def _download_url(url_to_download: str) -> dict:
@@ -120,4 +130,12 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    #main()
+    apikey = '857a6b008fb4dc3d4496517d7514a4b0'
+    weather = OpenWeather('92697', 'US')
+    weather.set_apikey(apikey)
+    message = 'It is @weather today.'
+    weather.load_data()
+    message = weather.transclude(message)
+    print(message)
+
