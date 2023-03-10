@@ -6,24 +6,12 @@ markvn&uci.edu
 
 # 857a6b008fb4dc3d4496517d7514a4b0
 
-import urllib, json
-from urllib import request, error
+from WebAPI import WebAPI
 
 
-class Error403(Exception):
-    pass
-
-
-class Error404(Exception):
-    pass
-
-
-class Error503(Exception):
-    pass
-
-
-class OpenWeather:
-    def __init__(self, zipcode, ccode):
+class OpenWeather(WebAPI):
+    def __init__(self, zipcode: str='92617', ccode: str='US'):
+        super().__init__()
         self.zipcode = zipcode
         self.ccode = ccode
         self.api_key = "857a6b008fb4dc3d4496517d7514a4b0"
@@ -37,13 +25,6 @@ class OpenWeather:
         self.city = None
         self.sunset = None
 
-    def set_apikey(self, apikey: str) -> None:
-        """
-        Sets the apikey required to make requests to a web API.
-        :param apikey: The apikey supplied by the API service
-        """
-        self.api_key = apikey
-
     def load_data(self) -> None:
         """
         Calls the web api using the required values and stores the response in
@@ -52,7 +33,7 @@ class OpenWeather:
 
         url = f"http://api.openweathermap.org/data/2.5/weather?zip=" \
               f"{self.zipcode},{self.ccode}&appid={self.api_key}"
-        weather_obj = _download_url(url)
+        weather_obj = super()._download_url(url)
         if weather_obj is not None:
             try:
                 self.temperature = weather_obj['main']['temp']
@@ -79,44 +60,6 @@ class OpenWeather:
             return t_message
 
 
-def _download_url(url_to_download: str) -> dict:
-    response = None
-    r_obj = None
-
-    try:
-        response = urllib.request.urlopen(url_to_download)
-        json_results = response.read()
-        r_obj = json.loads(json_results)
-
-    except urllib.error.HTTPError as He:
-        print('Failed to download contents of URL')
-        print('Status code: {}'.format(He.code))
-        if He.code == 403:
-            raise Error403('Invalid Access Key', He)
-        elif He.code == 404:
-            raise Error404('The page you are looking for does not exist', He)
-        elif He.code == 503:
-            raise Error503('Unavailable server. The server is not ready to '
-                           'handle your request', He)
-
-    except urllib.error.URLError as Ue:
-        print('Failed to download contents of URL')
-        print('Reason: {}'.format(Ue.reason))
-
-    except json.JSONDecodeError as Je:
-        print('JSONDecodeError: Invalid data format')
-
-    except ValueError as Ve:
-        print('Failed to download contents of URL')
-        print('ValueError: Invalid URL')
-
-    finally:
-        if response is not None:
-            response.close()
-
-    return r_obj
-
-
 def main() -> None:
     zip = "92697"
     ccode = "US"
@@ -130,12 +73,14 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    #main()
-    apikey = '857a6b008fb4dc3d4496517d7514a4b0'
-    weather = OpenWeather('92697', 'US')
-    weather.set_apikey(apikey)
-    message = 'It is @weather today.'
-    weather.load_data()
-    message = weather.transclude(message)
-    print(message)
+    main()
+    # apikey = '857a6b008fb4dc3d4496517d7514a4b0'
+    # weather = OpenWeather('92697', 'US')
+    # weather.set_apikey(apikey)
+    # message = 'It is @weather today.'
+    # weather.load_data()
+    # message = weather.transclude(message)
+    # print(message)
+
+
 
