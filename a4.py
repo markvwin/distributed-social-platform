@@ -3,6 +3,8 @@
 # 84257566
 
 from pathlib import Path
+
+import WebAPI
 import ui
 import Profile
 from datetime import datetime
@@ -10,6 +12,8 @@ from datetime import datetime
 import user_interface
 import ds_client
 import json
+import OpenWeather as op
+import LastFM as fm
 
 signal = 0
 
@@ -277,13 +281,63 @@ def e_command(command_list):
             print(f'\nBio has been changed to: "{new_bio}"')
     if '-addpost' in command_list:
         u_post = command_list[command_list.index('-addpost') + 1]
-        new_post = Profile.Post(u_post)
-        ui.current_profile.add_post(new_post)
-        if user_interface.admin_mode:
-            ui.current_profile.save_profile(ui.dire_prof)
-        elif not user_interface.admin_mode:
-            print(f'\nThe following post has been added:\n"{u_post}"')
-            ui.current_profile.save_profile(ui.dire_prof)
+        try:
+            if "@weather" in u_post:
+                api_key = input('Please enter your OpenWeather API key (or hit enter to use the default key):\n')
+                while True:
+                    if not api_key or len(api_key) >= 32:
+                        break
+                    if len(api_key) < 32:
+                        api_key = input('Please enter a valid api key:\n')
+                        if api_key == '\n':
+                            api_key = ''
+
+                country_code = input('Please enter a country code:\n')
+                zip_code = input('Please enter a ZIP code:\n')
+                weather_instance = op.OpenWeather(zip_code, country_code)
+                weather_instance.load_data()
+                if api_key:
+                    weather_instance.set_apikey(api_key)
+                u_post = weather_instance.transclude(u_post)
+
+            if "@lastfm" in u_post:
+                api_key = input(
+                    'Please enter your LastFM API key (or hit enter to use the default key):\n')
+                while True:
+                    if not api_key or len(api_key) >= 32:
+                        break
+                    if len(api_key) < 32:
+                        api_key = input('Please enter a valid api key:\n')
+                        if api_key == '\n':
+                            api_key = ''
+
+                country = input('Please enter a country:\n')
+                country = country.replace(" ", '+')
+                print(country)
+                fm_instance = fm.LastFM(country)
+                fm_instance.load_data()
+                if api_key:
+                    fm_instance.set_apikey(api_key)
+                u_post = fm_instance.transclude(u_post)
+
+            new_post = Profile.Post(u_post)
+            ui.current_profile.add_post(new_post)
+            if user_interface.admin_mode:
+                ui.current_profile.save_profile(ui.dire_prof)
+            elif not user_interface.admin_mode:
+                print(f'\nThe following post has been added:\n"{u_post}"')
+                ui.current_profile.save_profile(ui.dire_prof)
+
+        except WebAPI.Error403:
+            print('Invalid Access Key')
+        except WebAPI.Error404:
+            print('The page you are looking for does not exist')
+        except WebAPI.Error503:
+            print('Unavailable server. The server is not ready to handle '
+                  'your request')
+        except Exception:
+            print('Invalid API request')
+
     if '-delpost' in command_list:
         try:
             post_id = int(command_list[command_list.index('-delpost')+1])
@@ -467,3 +521,18 @@ if __name__ == "__main__":
         while command_list_1 != 'Q':
             command_list_1 = ui.fetch_command_list()
             ui.commands(command_list_1)
+
+    # def test_api(message: str, apikey: str, webapi: WebAPI):
+    #     webapi.set_apikey(apikey)
+    #     webapi.load_data()
+    #     result = webapi.transclude(message)
+    #     print(result)
+    #
+    # open_weather = op.OpenWeather()  # notice there are no params here...HINT: be sure to use parameter defaults!!!
+    # lastfm = fm.LastFM()
+    #
+    # test_api("Testing the weather: @weather", '857a6b008fb4dc3d4496517d7514a4b0', open_weather)
+    # # expected output should include the original message transcluded with the default weather value for the @weather keyword.
+    #
+    # test_api("Testing lastFM: @lastfm", '4b4aed6a43a67671b28e3af38ba07edc', lastfm)
+    # # # expected output include the original message transcluded with the default music data assigned to the @lastfm keyword
