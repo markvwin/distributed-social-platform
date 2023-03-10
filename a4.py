@@ -295,9 +295,11 @@ def e_command(command_list):
                 country_code = input('Please enter a country code:\n')
                 zip_code = input('Please enter a ZIP code:\n')
                 weather_instance = op.OpenWeather(zip_code, country_code)
-                weather_instance.load_data()
+
                 if api_key:
                     weather_instance.set_apikey(api_key)
+
+                weather_instance.load_data()
                 u_post = weather_instance.transclude(u_post)
 
             if "@lastfm" in u_post:
@@ -315,9 +317,11 @@ def e_command(command_list):
                 country = country.replace(" ", '+')
                 print(country)
                 fm_instance = fm.LastFM(country)
-                fm_instance.load_data()
+
                 if api_key:
                     fm_instance.set_apikey(api_key)
+
+                fm_instance.load_data()
                 u_post = fm_instance.transclude(u_post)
 
             new_post = Profile.Post(u_post)

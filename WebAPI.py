@@ -18,7 +18,8 @@ class Error503(Exception):
 class WebAPI(ABC):
 
     def __init__(self):
-        self.api_key = None
+        pass
+        # self.api_key = None
 
     def _download_url(self, url: str) -> dict:
         # TODO: Implement web api request code in a way that supports ALL types of web APIs
