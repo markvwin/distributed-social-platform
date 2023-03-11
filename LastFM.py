@@ -4,15 +4,12 @@ markvn&uci.edu
 84257566
 """
 
-# 4b4aed6a43a67671b28e3af38ba07edc
-
-import urllib, json
-from urllib import request, error
 from WebAPI import WebAPI
 
 
 class LastFM(WebAPI):
-    def __init__(self, ccode: str='united+states'):
+    """Child Class of WebAPI that scrapes data from LastFM API"""
+    def __init__(self, ccode: str = 'united+states'):
         super().__init__()
         self.ccode = ccode
         self.api_key = "4b4aed6a43a67671b28e3af38ba07edc"  # Default key
@@ -45,18 +42,3 @@ class LastFM(WebAPI):
         if "@lastfm" in message:
             t_message = message.replace('@lastfm', self.top_artist)
             return t_message
-
-
-def main() -> None:
-    apikey = "4b4aed6a43a67671b28e3af38ba07edc"
-    ccode = 'united+states'
-
-    last_fm = LastFM(ccode)
-    last_fm.set_apikey(apikey)
-    last_fm.load_data()
-
-    print(f'\\\\*{last_fm.top_artist}*//')
-
-
-if __name__ == '__main__':
-    main()
