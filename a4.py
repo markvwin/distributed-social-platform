@@ -1,6 +1,8 @@
-# Mark Nguyen
-# markvn@uci.edu
-# 84257566
+"""
+Mark Nguyen
+markvn@uci.edu
+84257566
+"""
 
 from pathlib import Path
 
@@ -18,6 +20,7 @@ signal = 0
 
 
 def print_directory_and_sub(directory, files_only=False):
+    """Prints directories and subdirectories with the option of only files."""
     dirpath = Path(directory)
     dirs = []
     fs = []
@@ -40,6 +43,7 @@ def print_directory_and_sub(directory, files_only=False):
 
 
 def print_directory(directory, files_only=False):
+    """Prints only files and directories in a directory not subdirectories."""
     dirpath = Path(directory)
     dirs = []
     fs = []
@@ -59,6 +63,10 @@ def print_directory(directory, files_only=False):
 
 
 def search_directory(directory, file_searched, recur=False):
+    """
+    Search a directory for files given a filename with the option of searching
+    subdirectories
+    """
     global signal
     dirpath = Path(directory)
     dirs = []
@@ -88,6 +96,10 @@ def search_directory(directory, file_searched, recur=False):
 
 
 def search_directory_ext(directory, ext, recur=False):
+    """
+    Search a directory for files with a given extension with the option of
+    searching subdirectories
+    """
     global signal
     dirpath = Path(directory)
     dirs = []
@@ -112,6 +124,7 @@ def search_directory_ext(directory, ext, recur=False):
 
 
 def l_command(command_list):
+    """L command for listing files/directories"""
     global signal
     signal = 0
 
@@ -186,6 +199,7 @@ def l_command(command_list):
 
 
 def c_command(command_list, usr=None, pwd=None, bio=None, ip='168.235.86.101'):
+    """C command for creating a DSU file"""
     filename = command_list[3] + '.dsu'
     filepath = Path(command_list[1]) / filename
     if filepath.exists():
@@ -221,6 +235,7 @@ def c_command(command_list, usr=None, pwd=None, bio=None, ip='168.235.86.101'):
 
 
 def o_command(command_list):
+    """O command for opening a DSU file and loading into the profile"""
     filepath = command_list[1]
     try:
         if user_interface.admin_mode:
@@ -254,6 +269,7 @@ def o_command(command_list):
 
 
 def e_command(command_list):
+    """E command for making edits to profile."""
     if '-usr' in command_list:
         new_username = command_list[command_list.index('-usr') + 1]
         ui.current_profile.username = new_username
@@ -375,6 +391,7 @@ def e_command(command_list):
 
 
 def p_command(command_list):
+    """P command for printing Profile contents."""
     if '-usr' in command_list:
         print(f'Username: {ui.current_profile.username}')
     if '-pwd' in command_list:
@@ -448,6 +465,7 @@ def p_command(command_list):
 
 
 def u_command(command_list):
+    """U command for uploading Profile information to DSU server."""
     usr = ui.current_profile.username
     pwd = ui.current_profile.password
     ip_ad = ui.current_profile.dsuserver
@@ -470,6 +488,7 @@ def u_command(command_list):
 
 
 def r_command(command_list):
+    """R command for reading DSU file contents."""
     pathname = command_list[1]
     if user_interface.admin_mode:
         if pathname[-3:] == 'dsu':
@@ -500,6 +519,7 @@ def r_command(command_list):
 
 
 def d_command(command_list):
+    """D command for deleting DSU file."""
     if user_interface.admin_mode:
         pathname = command_list[1]
         if pathname[-3:] == 'dsu':

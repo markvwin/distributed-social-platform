@@ -1,3 +1,9 @@
+"""
+Mark Nguyen
+markvn@uci.edu
+84257566
+"""
+
 import OpenWeather as op
 import LastFM as fm
 import WebAPI
