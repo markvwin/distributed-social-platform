@@ -34,3 +34,21 @@ def test_json_decode_error():
     response = "jello"
     extracted_response = ds_protocol.extract_json(response)
     extracted_response1 = ds_protocol.extract_json_dms(response)
+
+
+def test_extract_messages():
+    answer = {'markb': [('Hello User 1!', '1603167689.3928561'),
+                        ('Bzzzzz', '1603167689.3928561')],
+              'thebeemoviescript': [('Bzzzzz', '1603167689.3928561'),
+                                    ('Hello User 1!', '1603167689.3928561')]}
+    m = [{"message": "Hello User 1!", "from": "markb",
+          "timestamp": "1603167689.3928561"},
+         {"message": "Bzzzzz", "from": "thebeemoviescript",
+          "timestamp": "1603167689.3928561"},
+         {"message": "Bzzzzz", "from": "markb",
+          "timestamp": "1603167689.3928561"},
+         {"message": "Hello User 1!", "from": "thebeemoviescript",
+          "timestamp": "1603167689.3928561"}]
+
+    test = ds_protocol.extract_messages(m)
+    assert test == answer
