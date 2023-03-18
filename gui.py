@@ -122,20 +122,36 @@ class NewContactDialog(tk.simpledialog.Dialog):
         self.pwd = pwd
         super().__init__(root, title)
 
+    def apply(self, *args):
+        self.server = self.server_entry.get().rstrip()
+        self.user = self.username_entry.get().rstrip()
+        self.pwd = self.password_entry.get().rstrip()
+
     def body(self, frame):
         server_label = tk.Label(frame, width=30, text="DS Server Address")
         server_label.pack()
-        server_entry = tk.Entry(frame, width=30)
-        server_entry.insert(tk.END, self.server)
-        server_entry.pack()
-        self.server = server_entry.get()
+        self.server_entry = tk.Entry(frame, width=30)
+        self.server_entry.insert(tk.END, "168.235.86.101")
+        self.server_entry.pack()
 
         username_label = tk.Label(frame, width=30, text="Username")
         username_label.pack()
-        username_entry = tk.Entry(frame, width=30)
-        username_entry.insert(tk.END, self.user)
-        username_entry.pack()
-        self.user = username_entry.get()
+        self.username_entry = tk.Entry(frame, width=30)
+        self.username_entry.insert(tk.END, self.user)
+        self.username_entry.pack()
+
+    def buttonbox(self):
+        box = tk.Frame(self)
+
+        w = tk.Button(box, text="OK", width=10, command=self.ok, default=tk.ACTIVE)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        w = tk.Button(box, text="Cancel", width=10, command=self.cancel)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.bind("<Return>", self.ok)
+        self.bind("<Escape>", self.cancel)
+
+        box.pack()
 
 
 class NewProfile(tk.simpledialog.Dialog):
@@ -181,6 +197,42 @@ class NewProfile(tk.simpledialog.Dialog):
         w = tk.Button(box, text="OK", width=10, command=self.ok, default=tk.ACTIVE)
         w.pack(side=tk.LEFT, padx=5, pady=5)
         w = tk.Button(box, text="Cancel", width=10, command=self.cancel)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.bind("<Return>", self.ok)
+        self.bind("<Escape>", self.cancel)
+
+        box.pack()
+
+
+class CreateOrOpenFile(tk.simpledialog.Dialog):
+    def __init__(self, root, title=None):
+        self.root = root
+        self.open = False
+        self.new = False
+        super().__init__(root, title)
+
+    def open_profile(self):
+        self.open = True
+        self.destory()
+
+    def new_profile(self):
+        self.new = True
+        self.self.destory()
+
+    def body(self, frame):
+        server_label = tk.Label(frame, width=30,
+                                text="Please select an option")
+        server_label.pack()
+
+    def buttonbox(self):
+        box = tk.Frame(self)
+
+        w = tk.Button(box, text="Open existing profile", width=20,
+                      command=self.open_profile, default=tk.ACTIVE)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        w = tk.Button(box, text="Create a new profile", width=20,
+                      command=self.new_profile)
         w.pack(side=tk.LEFT, padx=5, pady=5)
 
         self.bind("<Return>", self.ok)
@@ -278,6 +330,18 @@ class MainApp(tk.Frame):
             self.username = temp.username
             self.password = temp.password
             self.filepath = path
+            self.login = True
+
+    def start_up(self):
+        option = CreateOrOpenFile(self.root, 'Welcome to DS Messenger!')
+        if option.new:
+            self.new_profile()
+        elif option.open:
+            self.open_profile()
+        else:
+            self.root.destroy()
+        if not self.login:
+            self.root.destroy()
 
     def _draw(self):
         # Build a menu and add it to the root frame.
@@ -304,6 +368,8 @@ class MainApp(tk.Frame):
         self.body.pack(fill=tk.BOTH, side=tk.TOP, expand=True)
         self.footer = Footer(self.root, send_callback=self.send_message)
         self.footer.pack(fill=tk.BOTH, side=tk.BOTTOM)
+
+        self.start_up()
 
 
 if __name__ == "__main__":
