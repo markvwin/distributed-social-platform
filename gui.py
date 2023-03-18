@@ -1,8 +1,11 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
+from tkinter import messagebox
 from typing import Text
 
 import ds_messenger
+import Profile
+from pathlib import Path
 
 
 class Body(tk.Frame):
@@ -120,17 +123,70 @@ class NewContactDialog(tk.simpledialog.Dialog):
         super().__init__(root, title)
 
     def body(self, frame):
-        self.server_label = tk.Label(frame, width=30, text="DS Server Address")
-        self.server_label.pack()
+        server_label = tk.Label(frame, width=30, text="DS Server Address")
+        server_label.pack()
+        server_entry = tk.Entry(frame, width=30)
+        server_entry.insert(tk.END, self.server)
+        server_entry.pack()
+        self.server = server_entry.get()
+
+        username_label = tk.Label(frame, width=30, text="Username")
+        username_label.pack()
+        username_entry = tk.Entry(frame, width=30)
+        username_entry.insert(tk.END, self.user)
+        username_entry.pack()
+        self.user = username_entry.get()
+
+
+class NewProfile(tk.simpledialog.Dialog):
+    def __init__(self, root, title=None):
+        self.root = root
+        self.server = None
+        self.user = None
+        self.pwd = None
+        self.bio = None
+        super().__init__(root, title)
+
+    def apply(self, *args):
+        self.server = self.server_entry.get().rstrip()
+        self.user = self.username_entry.get().rstrip()
+        self.pwd = self.password_entry.get().rstrip()
+        self.bio = self.bio_entry.get().rstrip()
+
+    def body(self, frame):
+        server_label = tk.Label(frame, width=30, text="DS Server Address")
+        server_label.pack()
         self.server_entry = tk.Entry(frame, width=30)
-        self.server_entry.insert(tk.END, self.server)
+        self.server_entry.insert(tk.END, "168.235.86.101")
         self.server_entry.pack()
 
-        self.username_label = tk.Label(frame, width=30, text="Username")
-        self.username_label.pack()
+        username_label = tk.Label(frame, width=30, text="Username")
+        username_label.pack()
         self.username_entry = tk.Entry(frame, width=30)
-        self.username_entry.insert(tk.END, self.user)
         self.username_entry.pack()
+
+        password_label = tk.Label(frame, width=30, text="Password")
+        password_label.pack()
+        self.password_entry = tk.Entry(frame, width=30)
+        self.password_entry.pack()
+
+        bio_label = tk.Label(frame, width=30, text="Bio (optional)")
+        bio_label.pack()
+        self.bio_entry = tk.Entry(frame, width=30)
+        self.bio_entry.pack()
+
+    def buttonbox(self):
+        box = tk.Frame(self)
+
+        w = tk.Button(box, text="OK", width=10, command=self.ok, default=tk.ACTIVE)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        w = tk.Button(box, text="Cancel", width=10, command=self.cancel)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.bind("<Return>", self.ok)
+        self.bind("<Escape>", self.cancel)
+
+        box.pack()
 
 
 class MainApp(tk.Frame):
@@ -141,9 +197,13 @@ class MainApp(tk.Frame):
         self.password = None
         self.server = None
         self.recipient = None
+        self.filepath = None
+        self.current_profile = None
+        self.login = False
         # You must implement this! You must configure and
         # instantiate your DirectMessenger instance after this line.
-        #self.direct_messenger = ... continue!
+        self.direct_messenger = None
+
 
         # After all initialization is complete,
         # call the _draw method to pack the widgets
@@ -155,7 +215,7 @@ class MainApp(tk.Frame):
     def send_message(self):
         # You must implement this!
         entry = self.body.get_text_entry()
-        ds_messenger.DirectMessenger()
+        self.direct_messenger.send(entry, self.recipient)
         # pass
 
     def add_contact(self):
@@ -177,6 +237,9 @@ class MainApp(tk.Frame):
         # You must implement this!
         # You must configure and instantiate your
         # DirectMessenger instance after this line.
+        self.direct_messenger = ds_messenger.DirectMessenger(self.server,
+                                                             self.username,
+                                                             self.password)
 
     def publish(self, message:str):
         # You must implement this!
@@ -186,6 +249,36 @@ class MainApp(tk.Frame):
         # You must implement this!
         pass
 
+    def new_profile(self):
+        file = tk.filedialog.asksaveasfilename(defaultextension='.dsu', filetypes=[('DSU File', '.dsu')])
+        if file:
+            new_prof = NewProfile(self.root, "Create A New Profile")
+            if None not in [new_prof.server, new_prof.user, new_prof.pwd]:
+                new_file = open(file, 'w')
+                new_file.close()
+
+                self.current_profile = Profile.Profile(new_prof.server, new_prof.user, new_prof.pwd)
+                if new_prof.bio is None:
+                    new_prof.bio = ''
+                self.current_profile.bio = new_prof.bio
+                self.current_profile.save_profile(rf'{file}')
+
+                self.server = new_prof.server
+                self.username = new_prof.user
+                self.password = new_prof.pwd
+                self.filepath = file
+
+                self.login = True
+
+    def open_profile(self):
+        path = tk.filedialog.askopenfilename(filetypes=[("DSU Files", "*.dsu")])
+        if path:
+            temp = Profile.Profile()
+            temp.load_profile(path)
+            self.username = temp.username
+            self.password = temp.password
+            self.filepath = path
+
     def _draw(self):
         # Build a menu and add it to the root frame.
         menu_bar = tk.Menu(self.root)
@@ -193,8 +286,8 @@ class MainApp(tk.Frame):
         menu_file = tk.Menu(menu_bar)
 
         menu_bar.add_cascade(menu=menu_file, label='File')
-        menu_file.add_command(label='New')
-        menu_file.add_command(label='Open...')
+        menu_file.add_command(label='New', command=self.new_profile)
+        menu_file.add_command(label='Open...', command=self.open_profile)
         menu_file.add_command(label='Close')
 
         settings_file = tk.Menu(menu_bar)
