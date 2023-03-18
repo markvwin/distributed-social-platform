@@ -5,6 +5,8 @@ from typing import Text
 
 import ds_messenger
 import Profile
+import ui
+import time
 from pathlib import Path
 
 
@@ -41,10 +43,19 @@ class Body(tk.Frame):
         id = self.posts_tree.insert('', id, id, text=contact)
 
     def insert_user_message(self, message:str):
+        self.entry_editor.configure(state='normal')
         self.entry_editor.insert(1.0, message + '\n', 'entry-right')
+        self.entry_editor.configure(state='disabled')
 
     def insert_contact_message(self, message:str):
+        self.entry_editor.configure(state='normal')
         self.entry_editor.insert(1.0, message + '\n', 'entry-left')
+        self.entry_editor.configure(state='disabled')
+
+    def clear_text_widget(self):
+        self.entry_editor.configure(state='normal')
+        self.entry_editor.delete('1.0', tk.END)
+        self.entry_editor.configure(state='disabled')
 
     def get_text_entry(self) -> str:
         return self.message_editor.get('1.0', 'end').rstrip()
@@ -81,6 +92,7 @@ class Body(tk.Frame):
         self.entry_editor = tk.Text(editor_frame, width=0, height=5)
         self.entry_editor.tag_configure('entry-right', justify='right')
         self.entry_editor.tag_configure('entry-left', justify='left')
+        self.entry_editor.configure(state="disabled")
         self.entry_editor.pack(fill=tk.BOTH, side=tk.LEFT,
                                expand=True, padx=0, pady=0)
 
@@ -131,7 +143,7 @@ class NewContactDialog(tk.simpledialog.Dialog):
         server_label = tk.Label(frame, width=30, text="DS Server Address")
         server_label.pack()
         self.server_entry = tk.Entry(frame, width=30)
-        self.server_entry.insert(tk.END, "168.235.86.101")
+        self.server_entry.insert(tk.END, self.server)
         self.server_entry.pack()
 
         username_label = tk.Label(frame, width=30, text="Username")
@@ -139,6 +151,12 @@ class NewContactDialog(tk.simpledialog.Dialog):
         self.username_entry = tk.Entry(frame, width=30)
         self.username_entry.insert(tk.END, self.user)
         self.username_entry.pack()
+
+        password_label = tk.Label(frame, width=30, text="Password")
+        password_label.pack()
+        self.password_entry = tk.Entry(frame, width=30)
+        self.password_entry.insert(tk.END, self.pwd)
+        self.password_entry.pack()
 
     def buttonbox(self):
         box = tk.Frame(self)
@@ -154,7 +172,7 @@ class NewContactDialog(tk.simpledialog.Dialog):
         box.pack()
 
 
-class NewProfile(tk.simpledialog.Dialog):
+class NewProfileDialog(tk.simpledialog.Dialog):
     def __init__(self, root, title=None):
         self.root = root
         self.server = None
@@ -205,7 +223,7 @@ class NewProfile(tk.simpledialog.Dialog):
         box.pack()
 
 
-class CreateOrOpenFile(tk.simpledialog.Dialog):
+class CreateOrOpenFileDialog(tk.simpledialog.Dialog):
     def __init__(self, root, title=None):
         self.root = root
         self.open = False
@@ -214,11 +232,11 @@ class CreateOrOpenFile(tk.simpledialog.Dialog):
 
     def open_profile(self):
         self.open = True
-        self.destory()
+        self.destroy()
 
     def new_profile(self):
         self.new = True
-        self.self.destory()
+        self.destroy()
 
     def body(self, frame):
         server_label = tk.Label(frame, width=30,
@@ -235,7 +253,7 @@ class CreateOrOpenFile(tk.simpledialog.Dialog):
                       command=self.new_profile)
         w.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.bind("<Return>", self.ok)
+        self.bind("<Return>", self.open_profile)
         self.bind("<Escape>", self.cancel)
 
         box.pack()
@@ -254,21 +272,34 @@ class MainApp(tk.Frame):
         self.login = False
         # You must implement this! You must configure and
         # instantiate your DirectMessenger instance after this line.
-        self.direct_messenger = None
 
 
         # After all initialization is complete,
         # call the _draw method to pack the widgets
         # into the root frame
         self._draw()
-        self.body.insert_contact("studentexw23") # adding one example student.
-        self.body.insert_contact("hi")
+        close = self.start_up()
+        # print(self.friends)
+        if self.login:
+            self.load_treeview()
+            self.direct_messenger = ds_messenger.DirectMessenger(self.server, self.username, self.password)
+        # if close is False:
+        #     self.root.destroy()
+
+            # self.body.insert_contact("SukmaD") # adding one example student.
+        # self.body.insert_contact("hi")
 
     def send_message(self):
         # You must implement this!
         entry = self.body.get_text_entry()
+        self.body.set_text_entry('')
         self.direct_messenger.send(entry, self.recipient)
-        # pass
+        temp_msg = ds_messenger.DirectMessage()
+        temp_msg.message = entry
+        temp_msg.recipient = self.recipient
+        temp_msg.timestamp = time.time()
+
+
 
     def add_contact(self):
         # You must implement this!
@@ -279,69 +310,169 @@ class MainApp(tk.Frame):
 
     def recipient_selected(self, recipient):
         self.recipient = recipient
+        self.body.clear_text_widget()
+        msg_log = self.create_message_log(recipient)
+        for i in range(len(msg_log)):
+            if list(msg_log[i].keys())[0] == 'me':
+                self.body.insert_contact_message(msg_log[i]['me'][0])
+            elif list(msg_log[i].keys())[0] == recipient:
+                self.body.insert_user_message(msg_log[i][recipient][0])
+
+    def load_treeview(self):
+        self.current_profile.friends.sort()
+        for i in range(len(self.current_profile.friends)):
+            self.body.insert_contact(self.current_profile.friends[i])
 
     def configure_server(self):
-        ud = NewContactDialog(self.root, "Configure Account",
+        new_contact = NewContactDialog(self.root, "Configure Account",
                               self.username, self.password, self.server)
-        self.username = ud.user
-        self.password = ud.pwd
-        self.server = ud.server
-        # You must implement this!
-        # You must configure and instantiate your
-        # DirectMessenger instance after this line.
-        self.direct_messenger = ds_messenger.DirectMessenger(self.server,
-                                                             self.username,
-                                                             self.password)
+        if new_contact.pwd != self.password:
+            ans = messagebox.askquestion('Are you sure?', 'You will lose all online data connected to your account.')
+            if ans == 'yes':
+                if self.username == new_contact.user:
+                    messagebox.showerror('Change Username', 'If you change your password, you must also change your username. ')
+                    return
+                self.password = new_contact.pwd
+            elif ans == 'no':
+                return
+        valid = self.validate_account_info(new_contact.server, new_contact.user, new_contact.pwd)
+        if valid:
+            self.username = new_contact.user
+            self.password = new_contact.pwd
+            self.server = new_contact.server
+
+            # You must implement this!
+            # You must configure and instantiate your
+            # DirectMessenger instance after this line.
+            self.direct_messenger = ds_messenger.DirectMessenger(self.server,
+                                                                 self.username,
+                                                                 self.password)
+        else:
+            return
 
     def publish(self, message:str):
         # You must implement this!
         pass
 
     def check_new(self):
-        # You must implement this!
-        pass
+        all_messages = self.direct_messenger.retrieve_new()
+        self.current_profile.load_profile(self.filepath)
+
+    def retrieve_all(self):
+        all_messages = self.direct_messenger.retrieve_all()
+        self.current_profile.load_profile(self.filepath)
+
+    def create_message_log(self, recipient):
+        un_msgs = []
+
+        for i in range(len(self.current_profile.messages)):
+            recip = self.current_profile.messages[i]['recipient']
+            if recip == recipient:
+                msg = self.current_profile.messages[i]['message']
+                timestamp = self.current_profile.messages[i]['timestamp']
+                temp_dict = {recip: (msg, timestamp)}
+                un_msgs.append(temp_dict)
+
+        for i in range(len(self.current_profile.my_messages)):
+            recip = self.current_profile.messages[i]['recipient']
+            if recip == recipient:
+                msg = self.current_profile.messages[i]['message']
+                timestamp = self.current_profile.messages[i]['timestamp']
+                temp_dict = {'me': (msg, timestamp)}
+                un_msgs.append(temp_dict)
+        print(un_msgs)
+        sorted_msg_log = sorted(un_msgs, key=lambda x: list(x.items())[0][1], reverse=True)
+        return sorted_msg_log
+
+    def validate_account_info(self, ip, user, pwd):
+        temp_msg = ds_messenger.DirectMessenger(ip, user, pwd)
+        resp = temp_msg.check_response()
+        if not resp:
+            messagebox.showerror('Connection Error', 'Please check your connection.')
+            return False
+        elif resp:
+            if resp.type == 'error':
+                messagebox.showerror('Oops', resp.message)
+                return False
+            elif resp.type == 'ok':
+                messagebox.showinfo('ICS 32 Distributed Social Messenger', resp.message)
+                return True
 
     def new_profile(self):
         file = tk.filedialog.asksaveasfilename(defaultextension='.dsu', filetypes=[('DSU File', '.dsu')])
         if file:
-            new_prof = NewProfile(self.root, "Create A New Profile")
-            if None not in [new_prof.server, new_prof.user, new_prof.pwd]:
-                new_file = open(file, 'w')
-                new_file.close()
+            new_prof = NewProfileDialog(self.root, "Create A New Profile")
 
-                self.current_profile = Profile.Profile(new_prof.server, new_prof.user, new_prof.pwd)
-                if new_prof.bio is None:
-                    new_prof.bio = ''
-                self.current_profile.bio = new_prof.bio
-                self.current_profile.save_profile(rf'{file}')
+            if "" not in [new_prof.server, new_prof.user,
+                          new_prof.pwd] and None not in [new_prof.server,
+                                                         new_prof.user,
+                                                         new_prof.pwd]:
+                valid = self.validate_account_info(new_prof.server, new_prof.user, new_prof.pwd)
+                if valid:
+                    new_file = open(file, 'w')
+                    new_file.close()
 
-                self.server = new_prof.server
-                self.username = new_prof.user
-                self.password = new_prof.pwd
-                self.filepath = file
+                    self.current_profile = Profile.Profile(new_prof.server, new_prof.user, new_prof.pwd)
+                    if new_prof.bio is None:
+                        new_prof.bio = ''
+                    self.current_profile.bio = new_prof.bio
+                    self.current_profile.save_profile(rf'{file}')
 
-                self.login = True
+                    self.server = new_prof.server
+                    self.username = new_prof.user
+                    self.password = new_prof.pwd
+                    self.filepath = file
+                    ui.logged_in = True
+                    ui.dire_prof = file  # loads filepath into G variable for
+                    self.login = True    # other modules
+
+                    self.direct_messenger = ds_messenger.DirectMessenger(
+                        self.server,
+                        self.username,
+                        self.password)
+                    self.retrieve_all()
+                else:
+                    return
+            else:
+                messagebox.showerror('Unable To Create A Profile',
+                                     'A username, password, and server is required.')
 
     def open_profile(self):
         path = tk.filedialog.askopenfilename(filetypes=[("DSU Files", "*.dsu")])
-        if path:
-            temp = Profile.Profile()
-            temp.load_profile(path)
-            self.username = temp.username
-            self.password = temp.password
-            self.filepath = path
-            self.login = True
+        try:
+            if path:
+                temp = Profile.Profile()
+                temp.load_profile(path)
+                temp.save_profile(path)
+                self.username = temp.username
+                self.password = temp.password
+                self.server = temp.dsuserver
+                self.filepath = path
+                ui.dire_prof = path
+                ui.logged_in = True
+                self.login = True
+                self.current_profile = temp
+                self.direct_messenger = ds_messenger.DirectMessenger(self.server,
+                                                                     self.username,
+                                                                     self.password)
+                self.retrieve_all()
+        except Profile.DsuProfileError:
+            messagebox.showerror('DSU File Error', 'Invalid DSU file formatting.')
 
     def start_up(self):
-        option = CreateOrOpenFile(self.root, 'Welcome to DS Messenger!')
+        option = CreateOrOpenFileDialog(self.root, 'Welcome to DS Messenger!')
         if option.new:
             self.new_profile()
         elif option.open:
             self.open_profile()
         else:
             self.root.destroy()
-        if not self.login:
-            self.root.destroy()
+            return False
+
+        if not self.login:  # if user selects an option but closes the
+            self.start_up()  # window, then the menu will pop up again.
+        else:
+            return True
 
     def _draw(self):
         # Build a menu and add it to the root frame.
@@ -358,7 +489,7 @@ class MainApp(tk.Frame):
         menu_bar.add_cascade(menu=settings_file, label='Settings')
         settings_file.add_command(label='Add Contact',
                                   command=self.add_contact)
-        settings_file.add_command(label='Configure DS Server',
+        settings_file.add_command(label='Configure Account',
                                   command=self.configure_server)
 
         # The Body and Footer classes must be initialized and
@@ -368,8 +499,6 @@ class MainApp(tk.Frame):
         self.body.pack(fill=tk.BOTH, side=tk.TOP, expand=True)
         self.footer = Footer(self.root, send_callback=self.send_message)
         self.footer.pack(fill=tk.BOTH, side=tk.BOTTOM)
-
-        self.start_up()
 
 
 if __name__ == "__main__":
@@ -392,6 +521,7 @@ if __name__ == "__main__":
     # widgets used in the program. All of the classes that we use,
     # subclass Tk.Frame, since our root frame is main, we initialize
     # the class with it.
+    main.minsize(main.winfo_width(), main.winfo_height())
     app = MainApp(main)
 
     # When update is called, we finalize the states of all widgets that
@@ -401,7 +531,7 @@ if __name__ == "__main__":
     # Feel free to comment it out and see how the resizing
     # behavior of the window changes.
     main.update()
-    main.minsize(main.winfo_width(), main.winfo_height())
+
     id = main.after(2000, app.check_new)
     print(id)
     # And finally, start up the event loop for the program (you can find
