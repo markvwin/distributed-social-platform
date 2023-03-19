@@ -7,7 +7,9 @@ import ds_messenger
 import Profile
 import ui
 import time
+from datetime import datetime
 from pathlib import Path
+import json
 
 
 class Body(tk.Frame):
@@ -42,7 +44,7 @@ class Body(tk.Frame):
             entry = contact[:24] + "..."
         id = self.posts_tree.insert('', id, id, text=contact)
 
-    def insert_user_message(self, message:str):
+    def insert_user_message(self, message: str):
         self.entry_editor.configure(state='normal')
         self.entry_editor.insert(1.0, message + '\n', 'entry-right')
         self.entry_editor.configure(state='disabled')
@@ -50,6 +52,16 @@ class Body(tk.Frame):
     def insert_contact_message(self, message:str):
         self.entry_editor.configure(state='normal')
         self.entry_editor.insert(1.0, message + '\n', 'entry-left')
+        self.entry_editor.configure(state='disabled')
+
+    def bottom_insert_user_message(self, message: str):
+        self.entry_editor.configure(state='normal')
+        self.entry_editor.insert(tk.END, message + '\n', 'entry-right')
+        self.entry_editor.configure(state='disabled')
+
+    def bottom_insert_contact_message(self, message:str):
+        self.entry_editor.configure(state='normal')
+        self.entry_editor.insert(tk.END, message + '\n', 'entry-left')
         self.entry_editor.configure(state='disabled')
 
     def clear_text_widget(self):
@@ -270,6 +282,7 @@ class MainApp(tk.Frame):
         self.filepath = None
         self.current_profile = None
         self.login = False
+        self.new_messages = []
         # You must implement this! You must configure and
         # instantiate your DirectMessenger instance after this line.
 
@@ -286,7 +299,7 @@ class MainApp(tk.Frame):
         # if close is False:
         #     self.root.destroy()
 
-            # self.body.insert_contact("SukmaD") # adding one example student.
+            self.body.insert_contact("SukmaD") # adding one example student.
         # self.body.insert_contact("hi")
 
     def send_message(self):
@@ -297,7 +310,9 @@ class MainApp(tk.Frame):
         temp_msg = ds_messenger.DirectMessage()
         temp_msg.message = entry
         temp_msg.recipient = self.recipient
-        temp_msg.timestamp = time.time()
+        temp_msg.timestamp = float(time.time())
+        msg_dict = {temp_msg.timestamp: ['me', temp_msg.message]}
+        self.new_messages.append(msg_dict)
 
 
 
@@ -310,13 +325,65 @@ class MainApp(tk.Frame):
 
     def recipient_selected(self, recipient):
         self.recipient = recipient
+        self.load_messages(recipient)
+
+    def load_new_messages(self, recipient):
+        new_messages = self.direct_messenger.retrieve_new()
+        if not new_messages and not self.new_messages:
+            return
+        else:
+            self.current_profile.load_profile(self.filepath)
+            if new_messages:
+                for i in range(len(new_messages)):
+                    msg = new_messages[i].message
+                    recip = new_messages[i].recipient
+                    ti_me = float(new_messages[i].timestamp)
+                    msg_dict = {ti_me: [recip, msg]}
+                    self.new_messages.append(msg_dict)
+
+            msg_log = self.create_new_message_log(recipient)
+            for i, val in enumerate(msg_log):
+                if msg_log[i][list(msg_log[i].keys())[0]][0] == 'me':
+                    timestamp = list(msg_log[i].keys())[0]
+                    msg = msg_log[i][list(msg_log[i].keys())[0]][1]
+                    msg_time = datetime.fromtimestamp(timestamp).strftime(
+                        "%m/%d/%Y %I:%M %p")
+                    self.body.bottom_insert_contact_message(msg_time)
+                    self.body.bottom_insert_contact_message(msg)
+                    msg_log.pop(i)
+                    self.new_messages.pop(self.new_messages.index(val))
+
+                elif msg_log[i][list(msg_log[i].keys())[0]][0] == recipient:
+                    timestamp = list(msg_log[i].keys())[0]
+                    msg = msg_log[i][list(msg_log[i].keys())[0]][1]
+                    msg_time = datetime.fromtimestamp(timestamp).strftime(
+                        "%m/%d/%Y %I:%M %p")
+                    self.body.bottom_insert_user_message(msg_time)
+                    self.body.bottom_insert_user_message(msg)
+                    msg_log.pop(i)
+                    self.new_messages.pop(self.new_messages.index(val))
+
+    def load_messages(self, recipient):
         self.body.clear_text_widget()
         msg_log = self.create_message_log(recipient)
+
         for i in range(len(msg_log)):
-            if list(msg_log[i].keys())[0] == 'me':
-                self.body.insert_contact_message(msg_log[i]['me'][0])
-            elif list(msg_log[i].keys())[0] == recipient:
-                self.body.insert_user_message(msg_log[i][recipient][0])
+            if msg_log[i][list(msg_log[i].keys())[0]][0] == 'me':
+                timestamp = list(msg_log[i].keys())[0]
+                msg = msg_log[i][list(msg_log[i].keys())[0]][1]
+                msg_time = datetime.fromtimestamp(timestamp).strftime(
+                    "%m/%d/%Y %I:%M %p")
+                self.body.insert_contact_message(msg)
+                self.body.insert_contact_message(msg_time)
+
+            elif msg_log[i][list(msg_log[i].keys())[0]][0] == recipient:
+                timestamp = list(msg_log[i].keys())[0]
+                msg = msg_log[i][list(msg_log[i].keys())[0]][1]
+                msg_time = datetime.fromtimestamp(timestamp).strftime(
+                    "%m/%d/%Y %I:%M %p")
+                self.body.insert_user_message(msg)
+                self.body.insert_user_message(msg_time)
+
 
     def load_treeview(self):
         self.current_profile.friends.sort()
@@ -340,7 +407,6 @@ class MainApp(tk.Frame):
             self.username = new_contact.user
             self.password = new_contact.pwd
             self.server = new_contact.server
-
             # You must implement this!
             # You must configure and instantiate your
             # DirectMessenger instance after this line.
@@ -355,33 +421,37 @@ class MainApp(tk.Frame):
         pass
 
     def check_new(self):
-        all_messages = self.direct_messenger.retrieve_new()
-        self.current_profile.load_profile(self.filepath)
+        self.load_new_messages(self.recipient)
+        self.root.after(1000, self.check_new)
 
     def retrieve_all(self):
         all_messages = self.direct_messenger.retrieve_all()
         self.current_profile.load_profile(self.filepath)
 
+    def create_new_message_log(self, recipient):
+
+        sorted_msg_log = sorted(self.new_messages, key=lambda x: list(x.keys())[0],
+                                reverse=True)
+        return sorted_msg_log
+
     def create_message_log(self, recipient):
         un_msgs = []
+        for i in range(len(self.current_profile.my_messages)):
+            recip = self.current_profile.my_messages[i]['recipient']
+            if recip == recipient:
+                msg = self.current_profile.my_messages[i]['message']
+                timestamp = float(self.current_profile.my_messages[i]['timestamp'])
+                temp_dict = {timestamp: ['me', msg]}
+                un_msgs.append(temp_dict)
 
         for i in range(len(self.current_profile.messages)):
             recip = self.current_profile.messages[i]['recipient']
             if recip == recipient:
                 msg = self.current_profile.messages[i]['message']
-                timestamp = self.current_profile.messages[i]['timestamp']
-                temp_dict = {recip: (msg, timestamp)}
+                timestamp = float(self.current_profile.messages[i]['timestamp'])
+                temp_dict = {timestamp: [recipient, msg]}
                 un_msgs.append(temp_dict)
-
-        for i in range(len(self.current_profile.my_messages)):
-            recip = self.current_profile.messages[i]['recipient']
-            if recip == recipient:
-                msg = self.current_profile.messages[i]['message']
-                timestamp = self.current_profile.messages[i]['timestamp']
-                temp_dict = {'me': (msg, timestamp)}
-                un_msgs.append(temp_dict)
-        print(un_msgs)
-        sorted_msg_log = sorted(un_msgs, key=lambda x: list(x.items())[0][1], reverse=True)
+        sorted_msg_log = sorted(un_msgs, key=lambda x: list(x.keys())[0], reverse=True)
         return sorted_msg_log
 
     def validate_account_info(self, ip, user, pwd):
@@ -532,7 +602,7 @@ if __name__ == "__main__":
     # behavior of the window changes.
     main.update()
 
-    id = main.after(2000, app.check_new)
+    id = main.after(1000, app.check_new)
     print(id)
     # And finally, start up the event loop for the program (you can find
     # more on this in lectures of week 9 and 10).
