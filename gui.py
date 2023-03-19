@@ -29,10 +29,11 @@ class Body(tk.Frame):
         node_select is correlated with clicking on any of the boxes in the tree
         view.
         """
-        index = int(self.posts_tree.selection()[0])
-        entry = self._contacts[index]
-        if self._select_callback is not None:
-            self._select_callback(entry)
+        if self.posts_tree.selection():
+            index = int(self.posts_tree.selection()[0])
+            entry = self._contacts[index]
+            if self._select_callback is not None:
+                self._select_callback(entry)
 
     def insert_contact(self, contact: str):
         self._contacts.append(contact)
@@ -283,6 +284,7 @@ class MainApp(tk.Frame):
         self.current_profile = None
         self.login = False
         self.new_messages = []
+        self.after_running = True
         # You must implement this! You must configure and
         # instantiate your DirectMessenger instance after this line.
 
@@ -299,7 +301,7 @@ class MainApp(tk.Frame):
         # if close is False:
         #     self.root.destroy()
 
-            self.body.insert_contact("SukmaD") # adding one example student.
+            # self.body.insert_contact("SukmaD") # adding one example student.
         # self.body.insert_contact("hi")
 
     def send_message(self):
@@ -317,11 +319,20 @@ class MainApp(tk.Frame):
 
 
     def add_contact(self):
+        name = tk.simpledialog.askstring('New Contact', 'Username')
+        if name:
+            if name not in self.current_profile.friends:
+                self.current_profile.friends.append(name)
+                self.current_profile.save_profile(self.filepath)
+                self.body.insert_contact(name)
+            else:
+                return
+        else:
+            return
         # You must implement this!
         # Hint: check how to use tk.simpledialog.askstring to retrieve
         # the name of the new contact, and then use one of the body
         # methods to add the contact to your contact list
-        pass
 
     def recipient_selected(self, recipient):
         self.recipient = recipient
@@ -348,8 +359,8 @@ class MainApp(tk.Frame):
                     msg = msg_log[i][list(msg_log[i].keys())[0]][1]
                     msg_time = datetime.fromtimestamp(timestamp).strftime(
                         "%m/%d/%Y %I:%M %p")
-                    self.body.bottom_insert_contact_message(msg_time)
-                    self.body.bottom_insert_contact_message(msg)
+                    self.body.bottom_insert_user_message(msg_time)
+                    self.body.bottom_insert_user_message(msg)
                     msg_log.pop(i)
                     self.new_messages.pop(self.new_messages.index(val))
 
@@ -358,8 +369,8 @@ class MainApp(tk.Frame):
                     msg = msg_log[i][list(msg_log[i].keys())[0]][1]
                     msg_time = datetime.fromtimestamp(timestamp).strftime(
                         "%m/%d/%Y %I:%M %p")
-                    self.body.bottom_insert_user_message(msg_time)
-                    self.body.bottom_insert_user_message(msg)
+                    self.body.bottom_insert_contact_message(msg_time)
+                    self.body.bottom_insert_contact_message(msg)
                     msg_log.pop(i)
                     self.new_messages.pop(self.new_messages.index(val))
 
@@ -373,19 +384,21 @@ class MainApp(tk.Frame):
                 msg = msg_log[i][list(msg_log[i].keys())[0]][1]
                 msg_time = datetime.fromtimestamp(timestamp).strftime(
                     "%m/%d/%Y %I:%M %p")
-                self.body.insert_contact_message(msg)
-                self.body.insert_contact_message(msg_time)
-
+                self.body.insert_user_message(msg)
+                self.body.insert_user_message(msg_time)
             elif msg_log[i][list(msg_log[i].keys())[0]][0] == recipient:
                 timestamp = list(msg_log[i].keys())[0]
                 msg = msg_log[i][list(msg_log[i].keys())[0]][1]
                 msg_time = datetime.fromtimestamp(timestamp).strftime(
                     "%m/%d/%Y %I:%M %p")
-                self.body.insert_user_message(msg)
-                self.body.insert_user_message(msg_time)
-
+                self.body.insert_contact_message(msg)
+                self.body.insert_contact_message(msg_time)
 
     def load_treeview(self):
+        self.body.posts_tree.configure(selectmode='none')
+        for item in self.body.posts_tree.get_children():
+            self.body.posts_tree.delete(item)
+        self.body.posts_tree.configure(selectmode='browse')
         self.current_profile.friends.sort()
         for i in range(len(self.current_profile.friends)):
             self.body.insert_contact(self.current_profile.friends[i])
@@ -421,7 +434,8 @@ class MainApp(tk.Frame):
         pass
 
     def check_new(self):
-        self.load_new_messages(self.recipient)
+        if self.after_running:
+            self.load_new_messages(self.recipient)
         self.root.after(1000, self.check_new)
 
     def retrieve_all(self):
@@ -494,13 +508,22 @@ class MainApp(tk.Frame):
                     self.filepath = file
                     ui.logged_in = True
                     ui.dire_prof = file  # loads filepath into G variable for
-                    self.login = True    # other modules
+                                         # other modules
 
+                    if self.login:
+                        self.after_running = False
                     self.direct_messenger = ds_messenger.DirectMessenger(
                         self.server,
                         self.username,
                         self.password)
+
+                    excess_msgs = self.direct_messenger.retrieve_new()
+
                     self.retrieve_all()
+                    self.load_treeview()
+                    self.body.clear_text_widget()
+                    self.login = True
+                    self.after_running = True
                 else:
                     return
             else:
@@ -520,12 +543,22 @@ class MainApp(tk.Frame):
                 self.filepath = path
                 ui.dire_prof = path
                 ui.logged_in = True
-                self.login = True
                 self.current_profile = temp
+
+                if self.login:
+                    self.after_running = False
                 self.direct_messenger = ds_messenger.DirectMessenger(self.server,
                                                                      self.username,
                                                                      self.password)
+
+                excess_msgs = self.direct_messenger.retrieve_new()
+
                 self.retrieve_all()
+                self.load_treeview()
+                self.body.clear_text_widget()
+                self.login = True
+                self.after_running = True
+
         except Profile.DsuProfileError:
             messagebox.showerror('DSU File Error', 'Invalid DSU file formatting.')
 
