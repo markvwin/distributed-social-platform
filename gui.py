@@ -130,6 +130,7 @@ class Footer(tk.Frame):
     def _draw(self):
         save_button = tk.Button(master=self, text="Send", width=20)
         save_button.bind("<Button-1>", self.send_click)
+        self.root.bind('<Return>', self.send_click)
         # You must implement this.
         # Here you must configure the button to bind its click to
         # the send_click() function.
@@ -316,8 +317,6 @@ class MainApp(tk.Frame):
         msg_dict = {temp_msg.timestamp: ['me', temp_msg.message]}
         self.new_messages.append(msg_dict)
 
-
-
     def add_contact(self):
         name = tk.simpledialog.askstring('New Contact', 'Username')
         if name:
@@ -337,6 +336,7 @@ class MainApp(tk.Frame):
     def recipient_selected(self, recipient):
         self.recipient = recipient
         self.load_messages(recipient)
+        self.body.entry_editor.yview_moveto(1)
 
     def load_new_messages(self, recipient):
         new_messages = self.direct_messenger.retrieve_new()
@@ -373,6 +373,7 @@ class MainApp(tk.Frame):
                     self.body.bottom_insert_contact_message(msg)
                     msg_log.pop(i)
                     self.new_messages.pop(self.new_messages.index(val))
+                self.body.entry_editor.yview_moveto(1)
 
     def load_messages(self, recipient):
         self.body.clear_text_widget()
@@ -420,12 +421,14 @@ class MainApp(tk.Frame):
             self.username = new_contact.user
             self.password = new_contact.pwd
             self.server = new_contact.server
-            # You must implement this!
-            # You must configure and instantiate your
-            # DirectMessenger instance after this line.
+
             self.direct_messenger = ds_messenger.DirectMessenger(self.server,
                                                                  self.username,
                                                                  self.password)
+            self.current_profile.username = new_contact.user
+            self.current_profile.password = new_contact.pwd
+            self.current_profile.dsuserver = new_contact.server
+            self.current_profile.save_profile(self.filepath)
         else:
             return
 
