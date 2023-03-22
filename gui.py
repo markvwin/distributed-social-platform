@@ -1,19 +1,23 @@
+"""
+Mark Nguyen
+markvn@uci.edu
+84257566
+"""
+
 import tkinter as tk
 from tkinter import ttk, filedialog
 from tkinter import messagebox
-from typing import Text
 
 import ds_messenger
 import Profile
 import ui
 import time
 from datetime import datetime
-from pathlib import Path
-import json
 
 
 class Body(tk.Frame):
     """ The body generates the treeview on the left hand side of the GUI """
+
     def __init__(self, root, recipient_selected_callback=None):
         tk.Frame.__init__(self, root)
         self.root = root
@@ -50,7 +54,7 @@ class Body(tk.Frame):
         self.entry_editor.insert(1.0, message + '\n', 'entry-right')
         self.entry_editor.configure(state='disabled')
 
-    def insert_contact_message(self, message:str):
+    def insert_contact_message(self, message: str):
         self.entry_editor.configure(state='normal')
         self.entry_editor.insert(1.0, message + '\n', 'entry-left')
         self.entry_editor.configure(state='disabled')
@@ -60,7 +64,7 @@ class Body(tk.Frame):
         self.entry_editor.insert(tk.END, message + '\n', 'entry-right')
         self.entry_editor.configure(state='disabled')
 
-    def bottom_insert_contact_message(self, message:str):
+    def bottom_insert_contact_message(self, message: str):
         self.entry_editor.configure(state='normal')
         self.entry_editor.insert(tk.END, message + '\n', 'entry-left')
         self.entry_editor.configure(state='disabled')
@@ -73,7 +77,7 @@ class Body(tk.Frame):
     def get_text_entry(self) -> str:
         return self.message_editor.get('1.0', 'end').rstrip()
 
-    def set_text_entry(self, text:str):
+    def set_text_entry(self, text: str):
         self.message_editor.delete(1.0, tk.END)
         self.message_editor.insert(1.0, text)
 
@@ -84,7 +88,7 @@ class Body(tk.Frame):
         self.posts_tree = ttk.Treeview(posts_frame)
         self.posts_tree.bind("<<TreeviewSelect>>", self.node_select)
         self.posts_tree.pack(fill=tk.BOTH, side=tk.TOP,
-                             expand=True, padx=5, pady=5)
+                             expand=True, padx=5, pady=0)
 
         entry_frame = tk.Frame(master=self, bg="")
         entry_frame.pack(fill=tk.BOTH, side=tk.TOP, expand=True)
@@ -136,8 +140,8 @@ class Footer(tk.Frame):
         # the send_click() function.
         save_button.pack(fill=tk.BOTH, side=tk.RIGHT, padx=5, pady=5)
 
-        self.footer_label = tk.Label(master=self, text="Ready.")
-        self.footer_label.pack(fill=tk.BOTH, side=tk.LEFT, padx=5)
+        # self.footer_label = tk.Label(master=self, text="Ready.")
+        # self.footer_label.pack(fill=tk.BOTH, side=tk.LEFT, padx=5)
 
 
 class NewContactDialog(tk.simpledialog.Dialog):
@@ -285,37 +289,63 @@ class MainApp(tk.Frame):
         self.current_profile = None
         self.login = False
         self.new_messages = []
-        self.after_running = True
-        # You must implement this! You must configure and
-        # instantiate your DirectMessenger instance after this line.
+        self.status = tk.StringVar(self.root, value="OFFLINE")
+        self.check_val = tk.IntVar(self.root, value=0)
 
-
-        # After all initialization is complete,
-        # call the _draw method to pack the widgets
-        # into the root frame
         self._draw()
-        close = self.start_up()
-        # print(self.friends)
+        self.start_up()
+
         if self.login:
             self.load_treeview()
             self.direct_messenger = ds_messenger.DirectMessenger(self.server, self.username, self.password)
-        # if close is False:
-        #     self.root.destroy()
 
-            # self.body.insert_contact("SukmaD") # adding one example student.
-        # self.body.insert_contact("hi")
+    def online_switch(self):
+        try:
+            if self.status.get() == "OFFLINE":
+                ip = self.server
+                user = self.username
+                pwd = self.password
+                eligible = self.validate_online_eligibility(ip, user, pwd)
+                if eligible:
+                    self.go_online()
+                    self.status.set('ONLINE')
+                    self.label.config(fg='green')
+                    self.check_val.set(1)
+                else:
+                    self.check_val.set(0)
+                    self.status.set('OFFLINE')
+                    self.label.config(fg='red')
+            elif self.status.get() == 'ONLINE':
+                self.status.set('OFFLINE')
+                self.label.config(fg='red')
+                self.check_val.set(0)
+        except OSError:
+            messagebox.showerror('Meow', 'It seems like your cat has been messing with the router again. Please check your connection before going online.')
+            self.status.set('OFFLINE')
+            self.label.config(fg='red')
+            self.check_val.set(0)
+
+    def go_online(self):
+        excess_msgs = self.direct_messenger.retrieve_new()
+        self.retrieve_all()
+        self.load_treeview()
 
     def send_message(self):
-        # You must implement this!
-        entry = self.body.get_text_entry()
-        self.body.set_text_entry('')
-        self.direct_messenger.send(entry, self.recipient)
-        temp_msg = ds_messenger.DirectMessage()
-        temp_msg.message = entry
-        temp_msg.recipient = self.recipient
-        temp_msg.timestamp = float(time.time())
-        msg_dict = {temp_msg.timestamp: ['me', temp_msg.message]}
-        self.new_messages.append(msg_dict)
+        if self.recipient and self.status.get() == 'ONLINE':
+
+            if self.recipient not in self.current_profile.friends:
+                self.current_profile.friends.append(self.recipient)
+                self.current_profile.save_profile(self.filepath)
+
+            entry = self.body.get_text_entry()
+            self.body.set_text_entry('')
+            self.direct_messenger.send(entry, self.recipient)
+            temp_msg = ds_messenger.DirectMessage()
+            temp_msg.message = entry
+            temp_msg.recipient = self.recipient
+            temp_msg.timestamp = float(time.time())
+            msg_dict = {temp_msg.timestamp: ['me', temp_msg.message]}
+            self.new_messages.append(msg_dict)
 
     def add_contact(self):
         name = tk.simpledialog.askstring('New Contact', 'Username')
@@ -404,41 +434,56 @@ class MainApp(tk.Frame):
         for i in range(len(self.current_profile.friends)):
             self.body.insert_contact(self.current_profile.friends[i])
 
-    def configure_server(self):
+    def configure_account(self):
         new_contact = NewContactDialog(self.root, "Configure Account",
-                              self.username, self.password, self.server)
+                                       self.username, self.password, self.server)
         if new_contact.pwd != self.password:
             ans = messagebox.askquestion('Are you sure?', 'You will lose all online data connected to your account.')
             if ans == 'yes':
                 if self.username == new_contact.user:
-                    messagebox.showerror('Change Username', 'If you change your password, you must also change your username. ')
+                    messagebox.showerror('Change Username',
+                                         'If you change your password, you must also change your username. ')
                     return
                 self.password = new_contact.pwd
             elif ans == 'no':
                 return
-        valid = self.validate_account_info(new_contact.server, new_contact.user, new_contact.pwd)
+        valid = False
+        ip = new_contact.server
+        user = new_contact.user
+        pwd = new_contact.pwd
+        if self.status.get() == 'OFFLINE':
+            valid = self.validate_account_info(ip, user, pwd)
+        elif self.status.get() == 'ONLINE':
+            valid = self.validate_online_eligibility(ip, user, pwd)
         if valid:
-            self.username = new_contact.user
-            self.password = new_contact.pwd
-            self.server = new_contact.server
+            self.new_messages = []
+            self.username = user
+            self.password = pwd
+            self.server = ip
 
-            self.direct_messenger = ds_messenger.DirectMessenger(self.server,
-                                                                 self.username,
-                                                                 self.password)
-            self.current_profile.username = new_contact.user
-            self.current_profile.password = new_contact.pwd
-            self.current_profile.dsuserver = new_contact.server
+            self.direct_messenger = ds_messenger.DirectMessenger(ip, user, pwd)
+            self.current_profile.username = user
+            self.current_profile.password = pwd
+            self.current_profile.dsuserver = ip
             self.current_profile.save_profile(self.filepath)
         else:
+            if self.status.get() == 'ONLINE':
+                self.check_val.set(0)
+                self.status.set('OFFLINE')
+                self.label.config(fg='red')
             return
 
-    def publish(self, message:str):
+    def publish(self, message: str):
         # You must implement this!
         pass
 
     def check_new(self):
-        if self.after_running:
-            self.load_new_messages(self.recipient)
+        if self.status.get() == 'ONLINE':
+            try:
+                self.load_new_messages(self.recipient)
+            except OSError:
+                messagebox.showerror('Meow', 'It seems like your cat has been messing with the router again. Please check your connection before going online.')
+                self.online_switch()
         self.root.after(1000, self.check_new)
 
     def retrieve_all(self):
@@ -472,10 +517,19 @@ class MainApp(tk.Frame):
         return sorted_msg_log
 
     def validate_account_info(self, ip, user, pwd):
+        if ' ' in [ip, user, pwd]:
+            messagebox.showerror('Oops', 'Your entries cannot contain whitespace.')
+            return False
+        if not ip or not user or not pwd:
+            messagebox.showerror('Oops', 'You you seem to be missing a spot!')
+            return False
+        return True
+
+    def validate_online_eligibility(self, ip, user, pwd):
         temp_msg = ds_messenger.DirectMessenger(ip, user, pwd)
         resp = temp_msg.check_response()
         if not resp:
-            messagebox.showerror('Connection Error', 'Please check your connection.')
+            messagebox.showerror('Oops', 'Unable to connect to the DSU server')
             return False
         elif resp:
             if resp.type == 'error':
@@ -490,43 +544,37 @@ class MainApp(tk.Frame):
         if file:
             new_prof = NewProfileDialog(self.root, "Create A New Profile")
 
-            if "" not in [new_prof.server, new_prof.user,
-                          new_prof.pwd] and None not in [new_prof.server,
-                                                         new_prof.user,
-                                                         new_prof.pwd]:
-                valid = self.validate_account_info(new_prof.server, new_prof.user, new_prof.pwd)
+            ip = new_prof.server
+            user = new_prof.user
+            pwd = new_prof.pwd
+
+            if "" not in [ip, user, pwd] and None not in [ip, user, pwd]:
+                valid = self.validate_account_info(ip, user, pwd)
                 if valid:
                     new_file = open(file, 'w')
                     new_file.close()
-
-                    self.current_profile = Profile.Profile(new_prof.server, new_prof.user, new_prof.pwd)
+                    self.current_profile = Profile.Profile(ip, user, pwd)
                     if new_prof.bio is None:
                         new_prof.bio = ''
                     self.current_profile.bio = new_prof.bio
                     self.current_profile.save_profile(rf'{file}')
-
-                    self.server = new_prof.server
-                    self.username = new_prof.user
-                    self.password = new_prof.pwd
+                    self.server = ip
+                    self.username = user
+                    self.password = pwd
                     self.filepath = file
                     ui.logged_in = True
                     ui.dire_prof = file  # loads filepath into G variable for
-                                         # other modules
+                    # other modules
+                    if self.status.get() == 'ONLINE':
+                        self.online_switch()  # going offline
 
-                    if self.login:
-                        self.after_running = False
-                    self.direct_messenger = ds_messenger.DirectMessenger(
-                        self.server,
-                        self.username,
-                        self.password)
+                    dm_obj = ds_messenger.DirectMessenger(ip, user, pwd)
+                    self.direct_messenger = dm_obj
 
-                    excess_msgs = self.direct_messenger.retrieve_new()
-
-                    self.retrieve_all()
                     self.load_treeview()
                     self.body.clear_text_widget()
-                    self.login = True
-                    self.after_running = True
+
+                    self.login = True  # Responsible on loading data on startup
                 else:
                     return
             else:
@@ -548,19 +596,15 @@ class MainApp(tk.Frame):
                 ui.logged_in = True
                 self.current_profile = temp
 
-                if self.login:
-                    self.after_running = False
+                if self.status.get() == 'ONLINE':
+                    self.online_switch()  # going offline
                 self.direct_messenger = ds_messenger.DirectMessenger(self.server,
                                                                      self.username,
                                                                      self.password)
 
-                excess_msgs = self.direct_messenger.retrieve_new()
-
-                self.retrieve_all()
                 self.load_treeview()
                 self.body.clear_text_widget()
                 self.login = True
-                self.after_running = True
 
         except Profile.DsuProfileError:
             messagebox.showerror('DSU File Error', 'Invalid DSU file formatting.')
@@ -596,40 +640,61 @@ class MainApp(tk.Frame):
         settings_file.add_command(label='Add Contact',
                                   command=self.add_contact)
         settings_file.add_command(label='Configure Account',
-                                  command=self.configure_server)
+                                  command=self.configure_account)
 
         # The Body and Footer classes must be initialized and
         # packed into the root window.
         self.body = Body(self.root,
                          recipient_selected_callback=self.recipient_selected)
         self.body.pack(fill=tk.BOTH, side=tk.TOP, expand=True)
+
+        self.check_button = tk.Checkbutton(self.root, variable=self.check_val, command=self.online_switch)
+        self.check_button.pack(anchor='w', fill='none', side=tk.LEFT, padx=5, pady=0)
+
+        self.label = tk.Label(master=self.root, textvariable=self.status, fg='red')
+        self.label.pack(fill=tk.NONE, side=tk.LEFT, padx=0)
+
         self.footer = Footer(self.root, send_callback=self.send_message)
         self.footer.pack(fill=tk.BOTH, side=tk.BOTTOM)
 
 
 if __name__ == "__main__":
+    def center(win):
+        """
+        centers a tkinter window
+        :param win: the main window or Toplevel window to center
+        """
+        win.update_idletasks()
+        width = win.winfo_width()
+        frm_width = win.winfo_rootx() - win.winfo_x()
+        win_width = width + 2 * frm_width
+        height = win.winfo_height()
+        titlebar_height = win.winfo_rooty() - win.winfo_y()
+        win_height = height + titlebar_height + frm_width
+        x = win.winfo_screenwidth() // 2 - win_width // 2
+        y = win.winfo_screenheight() // 2 - win_height // 2
+        win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+        win.deiconify()
+
+
     # All Tkinter programs start with a root window. We will name ours 'main'.
     main = tk.Tk()
-
     # 'title' assigns a text value to the Title Bar area of a window.
     main.title("ICS 32 Distributed Social Messenger")
-
     # This is just an arbitrary starting point. You can change the value
     # around to see how the starting size of the window changes.
     main.geometry("720x480")
-
+    center(main)
     # adding this option removes some legacy behavior with menus that
     # some modern OSes don't support. If you're curious, feel free to comment
     # out and see how the menu changes.
     main.option_add('*tearOff', False)
-
     # Initialize the MainApp class, which is the starting point for the
     # widgets used in the program. All of the classes that we use,
     # subclass Tk.Frame, since our root frame is main, we initialize
     # the class with it.
     main.minsize(main.winfo_width(), main.winfo_height())
     app = MainApp(main)
-
     # When update is called, we finalize the states of all widgets that
     # have been configured within the root frame. Here, update ensures that
     # we get an accurate width and height reading based on the types of widgets
@@ -637,7 +702,6 @@ if __name__ == "__main__":
     # Feel free to comment it out and see how the resizing
     # behavior of the window changes.
     main.update()
-
     id = main.after(1000, app.check_new)
     print(id)
     # And finally, start up the event loop for the program (you can find
