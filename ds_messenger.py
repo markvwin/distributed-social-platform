@@ -73,6 +73,8 @@ class DirectMessenger:
                     temp_profile.save_profile(ui.dire_prof)
                     print('sent')
                 return True
+        else:
+            return False
 
     def retrieve_new(self) -> list:
         # must return a list of DirectMessage objects containing all new
@@ -131,7 +133,16 @@ class DirectMessenger:
                 if ui.logged_in:
                     temp_profile = Profile.Profile()
                     temp_profile.load_profile(ui.dire_prof)
-                    temp_profile.messages = serialized_dm_list
+                    temp_profile.messages.extend(serialized_dm_list)
+                    removing_dupes = []
+                    dupes_removed = []
+                    for item in temp_profile.messages:
+                        removing_dupes.append(json.dumps(item))
+                    removing_dupes = list(set(removing_dupes))
+                    for item in removing_dupes:
+                        dupes_removed.append(json.loads(item))
+                    temp_profile.messages = dupes_removed
+
                     for i in range(len(dm_list)):
                         if dm_list[i].recipient not in temp_profile.friends:
                             temp_profile.friends.append(dm_list[i].recipient)
@@ -143,10 +154,3 @@ if __name__ == "__main__":
     x = DirectMessenger("168.235.86.101", 'SukmaD', "123456789")
     print(x.send('hi', 'SukmaD'))
     print(x.retrieve_new())
-
-
-
-
-
-
-

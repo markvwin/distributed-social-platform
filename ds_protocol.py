@@ -59,33 +59,3 @@ def extract_messages(messages: list) -> dict:
         else:
             msg_dict[user] = [(msg, time)]
     return msg_dict
-
-
-# if __name__ == "__main__":
-#     m = [{"message": "Hello User 1!", "from": "markb",
-#           "timestamp": "1603167689.3928561"},
-#          {"message": "Bzzzzz", "from": "thebeemoviescript",
-#           "timestamp": "1603167689.3928561"},
-#          {"message": "Bzzzzz", "from": "markb",
-#           "timestamp": "1603167689.3928561"},
-#          {"message": "Hello User 1!", "from": "thebeemoviescript",
-#           "timestamp": "1603167689.3928561"}]
-#
-#     extract_messages(m)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

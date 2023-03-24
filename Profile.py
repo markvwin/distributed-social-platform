@@ -1,21 +1,9 @@
-# Profile.py
-#
-# ICS 32
-# Assignment #2: Journal
-#
-# Author: Mark S. Baldwin, modified by Alberto Krone-Martins
-#
-# v0.1.9
+"""
+Mark Nguyen
+markvn@uci.edu
+84257566
+"""
 
-# You should review this code to identify what features you need to support
-# in your program for assignment 2.
-#
-# YOU DO NOT NEED TO READ OR UNDERSTAND THE JSON SERIALIZATION ASPECTS OF THIS
-# CODE
-# RIGHT NOW, though can you certainly take a look at it if you are curious
-# since we
-# already covered a bit of the JSON format in class.
-#
 import json
 import time
 from pathlib import Path
@@ -120,6 +108,9 @@ class Profile:
         self.password = password  # REQUIRED
         self.bio = ''  # OPTIONAL
         self._posts = []  # OPTIONAL
+        self.messages = []
+        self.my_messages = []
+        self.friends = []
 
     """
 
@@ -221,6 +212,9 @@ class Profile:
                 self.password = obj['password']
                 self.dsuserver = obj['dsuserver']
                 self.bio = obj['bio']
+                self.messages = obj['messages']
+                self.my_messages = obj['my_messages']
+                self.friends = obj['friends']
                 for post_obj in obj['_posts']:
                     post = Post(post_obj['entry'], post_obj['timestamp'])
                     self._posts.append(post)
@@ -229,3 +223,9 @@ class Profile:
                 raise DsuProfileError(ex)
         else:
             raise DsuFileError()
+
+
+if __name__ == '__main__':
+    p = Profile('127.0.0.1', 'kram999', '123')
+    pat = "C:/Users/markv/PycharmProjects/test_dir/hello.dsu"
+    p.save_profile(pat)

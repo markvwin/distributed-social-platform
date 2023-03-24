@@ -23,16 +23,9 @@ class Body(tk.Frame):
         self.root = root
         self._contacts = [str]
         self._select_callback = recipient_selected_callback
-        # After all initialization is complete,
-        # call the _draw method to pack the widgets
-        # into the Body instance
         self._draw()
 
     def node_select(self, event):
-        """
-        node_select is correlated with clicking on any of the boxes in the tree
-        view.
-        """
         if self.posts_tree.selection():
             index = int(self.posts_tree.selection()[0])
             entry = self._contacts[index]
@@ -135,13 +128,7 @@ class Footer(tk.Frame):
         save_button = tk.Button(master=self, text="Send", width=20)
         save_button.bind("<Button-1>", self.send_click)
         self.root.bind('<Return>', self.send_click)
-        # You must implement this.
-        # Here you must configure the button to bind its click to
-        # the send_click() function.
         save_button.pack(fill=tk.BOTH, side=tk.RIGHT, padx=5, pady=5)
-
-        # self.footer_label = tk.Label(master=self, text="Ready.")
-        # self.footer_label.pack(fill=tk.BOTH, side=tk.LEFT, padx=5)
 
 
 class NewContactDialog(tk.simpledialog.Dialog):
@@ -358,10 +345,6 @@ class MainApp(tk.Frame):
                 return
         else:
             return
-        # You must implement this!
-        # Hint: check how to use tk.simpledialog.askstring to retrieve
-        # the name of the new contact, and then use one of the body
-        # methods to add the contact to your contact list
 
     def recipient_selected(self, recipient):
         self.recipient = recipient
@@ -473,10 +456,6 @@ class MainApp(tk.Frame):
                 self.label.config(fg='red')
             return
 
-    def publish(self, message: str):
-        # You must implement this!
-        pass
-
     def check_new(self):
         if self.status.get() == 'ONLINE':
             try:
@@ -563,8 +542,8 @@ class MainApp(tk.Frame):
                     self.password = pwd
                     self.filepath = file
                     ui.logged_in = True
-                    ui.dire_prof = file  # loads filepath into G variable for
-                    # other modules
+                    ui.dire_prof = file
+
                     if self.status.get() == 'ONLINE':
                         self.online_switch()  # going offline
 
@@ -642,8 +621,6 @@ class MainApp(tk.Frame):
         settings_file.add_command(label='Configure Account',
                                   command=self.configure_account)
 
-        # The Body and Footer classes must be initialized and
-        # packed into the root window.
         self.body = Body(self.root,
                          recipient_selected_callback=self.recipient_selected)
         self.body.pack(fill=tk.BOTH, side=tk.TOP, expand=True)
@@ -658,52 +635,39 @@ class MainApp(tk.Frame):
         self.footer.pack(fill=tk.BOTH, side=tk.BOTTOM)
 
 
+def center(win):
+    """
+    centers a tkinter window
+    :param win: the main window or Toplevel window to center
+    """
+    win.update_idletasks()
+    width = win.winfo_width()
+    frm_width = win.winfo_rootx() - win.winfo_x()
+    win_width = width + 2 * frm_width
+    height = win.winfo_height()
+    titlebar_height = win.winfo_rooty() - win.winfo_y()
+    win_height = height + titlebar_height + frm_width
+    x = win.winfo_screenwidth() // 2 - win_width // 2
+    y = win.winfo_screenheight() // 2 - win_height // 2
+    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+    win.deiconify()
+
+
 if __name__ == "__main__":
-    def center(win):
-        """
-        centers a tkinter window
-        :param win: the main window or Toplevel window to center
-        """
-        win.update_idletasks()
-        width = win.winfo_width()
-        frm_width = win.winfo_rootx() - win.winfo_x()
-        win_width = width + 2 * frm_width
-        height = win.winfo_height()
-        titlebar_height = win.winfo_rooty() - win.winfo_y()
-        win_height = height + titlebar_height + frm_width
-        x = win.winfo_screenwidth() // 2 - win_width // 2
-        y = win.winfo_screenheight() // 2 - win_height // 2
-        win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
-        win.deiconify()
 
-
-    # All Tkinter programs start with a root window. We will name ours 'main'.
     main = tk.Tk()
-    # 'title' assigns a text value to the Title Bar area of a window.
+
     main.title("ICS 32 Distributed Social Messenger")
-    # This is just an arbitrary starting point. You can change the value
-    # around to see how the starting size of the window changes.
+
     main.geometry("720x480")
     center(main)
-    # adding this option removes some legacy behavior with menus that
-    # some modern OSes don't support. If you're curious, feel free to comment
-    # out and see how the menu changes.
+
     main.option_add('*tearOff', False)
-    # Initialize the MainApp class, which is the starting point for the
-    # widgets used in the program. All of the classes that we use,
-    # subclass Tk.Frame, since our root frame is main, we initialize
-    # the class with it.
+
     main.minsize(main.winfo_width(), main.winfo_height())
     app = MainApp(main)
-    # When update is called, we finalize the states of all widgets that
-    # have been configured within the root frame. Here, update ensures that
-    # we get an accurate width and height reading based on the types of widgets
-    # we have used. minsize prevents the root window from resizing too small.
-    # Feel free to comment it out and see how the resizing
-    # behavior of the window changes.
+
     main.update()
     id = main.after(1000, app.check_new)
-    print(id)
-    # And finally, start up the event loop for the program (you can find
-    # more on this in lectures of week 9 and 10).
+
     main.mainloop()
