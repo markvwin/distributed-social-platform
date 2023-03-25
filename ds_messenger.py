@@ -150,9 +150,3 @@ class DirectMessenger:
                             temp_profile.friends.append(item.recipient)
                     temp_profile.save_profile(Profile.PROFILE_DIRECTORY)
                 return dm_list
-#
-#
-# if __name__ == "__main__":
-#     x = DirectMessenger("168.235.86.101", 'SukmaD', "123456789")
-#     print(x.send('hi', 'SukmaD'))
-#     print(x.retrieve_all())
