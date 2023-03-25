@@ -16,7 +16,8 @@ TOKEN = ''
 
 class DsuFileError(Exception):
     """
-    DsuFileError is a custom exception handler that you should catch in your own
+    DsuFileError is a custom exception handler that you should catch in your
+    own
     code. It is raised when attempting to load or save Profile objects to file
     the system.
     """
@@ -113,13 +114,15 @@ class Profile:
 
     def del_post(self, index: int) -> bool:
         """
-        del_post removes a Post at a given index and returns True if successful and
+        del_post removes a Post at a given index and returns True if successful
+        and
         False if
         an invalid index was supplied.
 
         To determine which post to delete you must implement your own search
         operation on
-        the posts returned from the get_posts function to find the correct index.
+        the posts returned from the get_posts function to find the correct
+        index.
         """
         try:
             del self._posts[index]
