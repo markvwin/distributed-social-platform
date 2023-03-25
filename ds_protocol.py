@@ -1,16 +1,17 @@
-# Mark Nguyen
-# markvn@uci.edu
-# 84257566
+"""
+Mark Nguyen
+markvn@uci.edu
+84257566
+"""
 
 import json
 from collections import namedtuple
 
-""" Namedtuple to hold the values retrieved from json messages. """
-DATA_TUPLE = namedtuple('TokenTuple', ['type', 'message', 'token'])
-DATA_TUPLE1 = namedtuple('MessagesTuple', ['type', 'messages'])
+DATATUPLE = namedtuple('TokenTuple', ['type', 'message', 'token'])
+DATATUPLE1 = namedtuple('MessagesTuple', ['type', 'messages'])
 
 
-def extract_json(json_msg: str) -> DATA_TUPLE:
+def extract_json(json_msg: str):
     """
     Call the json.loads() function on a json string and convert it to a
     DataTuple object
@@ -22,14 +23,14 @@ def extract_json(json_msg: str) -> DATA_TUPLE:
         message = response['message']
         if 'token' in response:
             token = response['token']
-            return DATA_TUPLE(resp_type, message, token)
-        else:
-            return DATA_TUPLE(resp_type, message, '')
+            return DATATUPLE(resp_type, message, token)
+        return DATATUPLE(resp_type, message, '')
     except json.JSONDecodeError:
         print("Json cannot be decoded.")
+        return
 
 
-def extract_json_dms(json_msg: str) -> DATA_TUPLE1:
+def extract_json_dms(json_msg: str):
     """
     Call the json.loads() function on a json string and convert it to a
     DataTuple object
@@ -39,9 +40,10 @@ def extract_json_dms(json_msg: str) -> DATA_TUPLE1:
         response = json_obj['response']
         resp_type = response['type']
         messages = response['messages']
-        return DATA_TUPLE1(resp_type, messages)
+        return DATATUPLE1(resp_type, messages)
     except json.JSONDecodeError:
         print("Json cannot be decoded.")
+        return
 
 
 def extract_messages(messages: list) -> dict:
@@ -50,10 +52,10 @@ def extract_messages(messages: list) -> dict:
     timestamp" as keys
     """
     msg_dict = {}
-    for i in range(len(messages)):
-        user = messages[i]['from']
-        time = messages[i]['timestamp']
-        msg = messages[i]['message']
+    for item in messages:
+        user = item['from']
+        time = item['timestamp']
+        msg = item['message']
         if user in msg_dict:
             msg_dict[user].append((msg, time))
         else:

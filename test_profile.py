@@ -74,7 +74,7 @@ def test_profile_object():
 
 def test_profile_index_error():
     prof = Profile.Profile()
-    resp = prof.del_post(1)
+    resp = prof.del_post(99)
     assert not resp
 
 

@@ -9,16 +9,18 @@ import json
 import ds_protocol
 
 
-def basic_send(server: str, port: int, username: str, password: str, token=False, request=None):
+def basic_send(server: str, port: int, username: str, password: str,
+               token=False, request=None):
+    """Basic request for server"""
     try:
-        assert type(server) == str, 'Type server is not a string.'
+        assert isinstance(server, str), 'Type server is not a string.'
         assert server
-        assert type(port) == int, 'Type port is not a integer.'
+        assert isinstance(port, int), 'Type port is not a integer.'
         assert 1 <= port <= 65535, 'Port number limit bypassed.'
-        assert type(username) == str
+        assert isinstance(username, str)
         assert username  # checks that username is not empty
         assert ' ' not in username, 'Username cannot contain any whitespace.'
-        assert type(password) == str
+        assert isinstance(password, str)
         assert password  # checks that password is not empty
         assert ' ' not in password, 'Password cannot contain any whitespace.'
     except AssertionError:
@@ -41,7 +43,7 @@ def basic_send(server: str, port: int, username: str, password: str, token=False
 
                 return resp
 
-            elif not token:
+            if not token:
                 send1 = sock.makefile('w')
                 recv = sock.makefile('r')
 
@@ -51,7 +53,6 @@ def basic_send(server: str, port: int, username: str, password: str, token=False
                 resp = recv.readline()
                 return resp
 
-    except (ConnectionError, TimeoutError, socket.gaierror) as connection_error:
+    except (ConnectionError, TimeoutError, socket.gaierror):
         print('Connection Error. Please re-examine your connection.')
         return False
-    return True

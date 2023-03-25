@@ -97,8 +97,9 @@ def test_dm_send():
     current_prof = Profile.Profile(ip, user, pwd)
     Profile.LOGGED_IN = True
     Profile.PROFILE_DIRECTORY = 'test00.dsu'
-    path = Path('test00.dsu')
-    path.touch()
+    path = 'test00.dsu'
+    if not Path(path):
+        Path(path).touch()
     current_prof.save_profile('test00.dsu')
     resp = dm_obj.send(msg, user)
     assert resp
@@ -113,8 +114,9 @@ def test_dm_retrieve_new():
     current_prof = Profile.Profile(ip, user, pwd)
     Profile.LOGGED_IN = True
     Profile.PROFILE_DIRECTORY = 'test00.dsu'
-    path = Path('test00.dsu')
-    path.touch()
+    path = 'test00.dsu'
+    if not Path(path):
+        Path(path).touch()
     current_prof.save_profile('test00.dsu')
     resp = dm_obj.retrieve_new()
     assert isinstance(resp, list)
@@ -129,8 +131,9 @@ def test_dm_retrieve_all():
     current_prof = Profile.Profile(ip, user, pwd)
     Profile.LOGGED_IN = True
     Profile.PROFILE_DIRECTORY = 'test00.dsu'
-    path = Path('test00.dsu')
-    path.touch()
+    path = 'test00.dsu'
+    if not Path(path):
+        Path(path).touch()
     current_prof.save_profile('test00.dsu')
     resp = dm_obj.retrieve_all()
     assert isinstance(resp, list)

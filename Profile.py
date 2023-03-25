@@ -8,28 +8,26 @@ import json
 import time
 from pathlib import Path
 
-"""
-DsuFileError is a custom exception handler that you should catch in your own
-code. It
-is raised when attempting to load or save Profile objects to file the system.
-
-"""
+CURRENT_PROFILE = None
+PROFILE_DIRECTORY = None
+LOGGED_IN = False
+TOKEN = ''
 
 
 class DsuFileError(Exception):
-    pass
-
-
-"""
-DsuProfileError is a custom exception handler that you should catch in your own
-code. It
-is raised when attempting to deserialize a dsu file to a Profile object.
-
-"""
+    """
+    DsuFileError is a custom exception handler that you should catch in your own
+    code. It is raised when attempting to load or save Profile objects to file
+    the system.
+    """
 
 
 class DsuProfileError(Exception):
-    pass
+    """
+    DsuProfileError is a custom exception handler that you should catch in your
+    own code. It
+    is raised when attempting to deserialize a dsu file to a Profile object.
+    """
 
 
 class Post(dict):
@@ -53,6 +51,7 @@ class Post(dict):
         dict.__init__(self, entry=self._entry, timestamp=self._timestamp)
 
     def set_entry(self, entry):
+        """Sets entry"""
         self._entry = entry
         dict.__setitem__(self, 'entry', entry)
 
@@ -61,22 +60,18 @@ class Post(dict):
             self._timestamp = time.time()
 
     def get_entry(self):
+        """Gets entry"""
         return self._entry
 
-    def set_time(self, time: float):
-        self._timestamp = time
-        dict.__setitem__(self, 'timestamp', time)
+    def set_time(self, timestamp: float):
+        """Sets time for entry"""
+        self._timestamp = timestamp
+        dict.__setitem__(self, 'timestamp', timestamp)
 
     def get_time(self):
+        """Gets timestamp for entry"""
         return self._timestamp
 
-    """
-
-    The property method is used to support get and set capability for entry and
-    time values. When the value for entry is changed, or set, the timestamp
-    field is updated to the current time.
-
-    """
     entry = property(get_entry, set_entry)
     timestamp = property(get_time, set_time)
 
@@ -112,120 +107,88 @@ class Profile:
         self.my_messages = []
         self.friends = []
 
-    """
-
-    add_post accepts a Post object as parameter and appends it to the posts
-    list. Posts
-    are stored in a list object in the order they are added. So if multiple
-    Posts objects
-    are created, but added to the Profile in a different order, it is possible
-    for the
-    list to not be sorted by the Post.timestamp property. So take caution as to
-    how you
-    implement your add_post code.
-
-    """
-
     def add_post(self, post: Post) -> None:
+        """adds a post"""
         self._posts.append(post)
 
-    """
-
-    del_post removes a Post at a given index and returns True if successful and
-    False if
-    an invalid index was supplied.
-
-    To determine which post to delete you must implement your own search
-    operation on
-    the posts returned from the get_posts function to find the correct index.
-
-    """
-
     def del_post(self, index: int) -> bool:
+        """
+        del_post removes a Post at a given index and returns True if successful and
+        False if
+        an invalid index was supplied.
+
+        To determine which post to delete you must implement your own search
+        operation on
+        the posts returned from the get_posts function to find the correct index.
+        """
         try:
             del self._posts[index]
             return True
         except IndexError:
             return False
 
-    """
-    get_posts returns the list object containing all posts that have been added
-    to the
-    Profile object
-    """
-
     def get_posts(self) -> list[Post]:
+        """
+        get_posts returns the list object containing all posts that have been
+        added to the Profile object
+        """
         return self._posts
 
-    """
-
-    save_profile accepts an existing dsu file to save the current instance of
-    Profile
-    to the file system.
-
-    Example usage:
-
-    profile = Profile()
-    profile.save_profile('/path/to/file.dsu')
-
-    Raises DsuFileError
-
-    """
-
     def save_profile(self, path: str) -> None:
-        p = Path(path)
+        """
+        save_profile accepts an existing dsu file to save the current instance
+        of Profile to the file system.
 
-        if p.exists() and p.suffix == '.dsu':
+        Example usage:
+
+        profile = Profile()
+        profile.save_profile('/path/to/file.dsu')
+
+        Raises DsuFileError
+        """
+        pat = Path(path)
+
+        if pat.exists() and pat.suffix == '.dsu':
             try:
-                f = open(p, 'w')
-                json.dump(self.__dict__, f)
-                f.close()
+                with open(pat, 'w') as file:
+                    json.dump(self.__dict__, file)
             except Exception as ex:
                 raise DsuFileError("Error while attempting to process the "
-                                   "DSU file.", ex)
+                                   "DSU file.", ex) from ex
         else:
             raise DsuFileError("Invalid DSU file path or type")
 
-    """
-
-    load_profile will populate the current instance of Profile with data stored
-    in a
-    DSU file.
-
-    Example usage:
-
-    profile = Profile()
-    profile.load_profile('/path/to/file.dsu')
-
-    Raises DsuProfileError, DsuFileError
-
-    """
-
     def load_profile(self, path: str) -> None:
-        p = Path(path)
+        """
 
-        if p.exists() and p.suffix == '.dsu':
+        load_profile will populate the current instance of Profile with data
+        stored in a DSU file.
+
+        Example usage:
+
+        profile = Profile()
+        profile.load_profile('/path/to/file.dsu')
+
+        Raises DsuProfileError, DsuFileError
+
+        """
+        pat = Path(path)
+
+        if pat.exists() and pat.suffix == '.dsu':
             try:
-                f = open(p, 'r')
-                obj = json.load(f)
-                self.username = obj['username']
-                self.password = obj['password']
-                self.dsuserver = obj['dsuserver']
-                self.bio = obj['bio']
-                self.messages = obj['messages']
-                self.my_messages = obj['my_messages']
-                self.friends = obj['friends']
-                for post_obj in obj['_posts']:
-                    post = Post(post_obj['entry'], post_obj['timestamp'])
-                    self._posts.append(post)
-                f.close()
+                with open(pat, 'r') as file:
+                    obj = json.load(file)
+                    self.username = obj['username']
+                    self.password = obj['password']
+                    self.dsuserver = obj['dsuserver']
+                    self.bio = obj['bio']
+                    self.messages = obj['messages']
+                    self.my_messages = obj['my_messages']
+                    self.friends = obj['friends']
+                    for post_obj in obj['_posts']:
+                        post = Post(post_obj['entry'], post_obj['timestamp'])
+                        self._posts.append(post)
             except Exception as ex:
-                raise DsuProfileError(ex)
+                raise DsuProfileError(ex) from ex
         else:
             raise DsuFileError()
-
-
-if __name__ == '__main__':
-    p = Profile('127.0.0.1', 'kram999', '123')
-    pat = "C:/Users/markv/PycharmProjects/test_dir/hello.dsu"
-    p.save_profile(pat)
