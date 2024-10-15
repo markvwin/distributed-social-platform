@@ -17,8 +17,7 @@
 
 # Introduction & Contact
 
-	Hello! My name is Mark Nguyen. I am currently in my final year at UCI
-	majoring in Business Economics. This is my first USEFUL python project, and
-	I am excited for you to use it.
+	Hello! My name is Mark Nguyen. I am currently a student studying CS. This
+	program is one of my favorite projects. I am excited for you to use it!
 
     markvn@uci.edu
