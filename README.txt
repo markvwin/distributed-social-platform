@@ -14,6 +14,8 @@
 	new messages, but you will be able to retrieve messages that are saved
 	locally on your device.
 
+	Please utilize a Python version > 3.11
+
 
 # Introduction & Contact
 
