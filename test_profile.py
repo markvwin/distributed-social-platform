@@ -103,8 +103,7 @@ def test_profile_save_exception():
 def test_profile_save_not_dsu():
     with pytest.raises(Profile.DsuFileError):
         path = 'test00.txt'
-        if not Path(path):
-            Path(path).touch()
+        Path(path).touch()
         temp_prof = Profile.Profile()
         temp_prof.save_profile(path)
 
@@ -112,8 +111,7 @@ def test_profile_save_not_dsu():
 def test_prof_load_exception():
     with pytest.raises(Profile.DsuProfileError):
         path = 'test00.dsu'
-        if not Path(path):
-            Path(path).touch()
+        Path(path).touch()
         temp_prof = Profile.Profile()
         temp_prof._posts.append('hi')
         temp_prof.save_profile(path)
@@ -123,8 +121,7 @@ def test_prof_load_exception():
 def test_prof_load_not_dsu():
     with pytest.raises(Profile.DsuFileError):
         path = 'test00.txt'
-        if not Path(path):
-            Path(path).touch()
+        Path(path).touch()
         temp_prof = Profile.Profile()
         temp_prof._posts.append('hi')
         temp_prof.load_profile(path)
